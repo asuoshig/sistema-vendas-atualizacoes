@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <title>Home - Sistema de Vendas</title>
+  <style>
+    body {
+  font-family: Arial, sans-serif;
+  background: #f5fff8;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-height: 100vh;
+}
+
+/* Animação suave do título */
+h1 {
+  text-align: center;
+  margin: 40px 0 30px;
+  color: #2f6b4f;
+  font-size: 32px;
+
+  opacity: 0;
+  transform: translateY(-15px);
+  animation: fadeSlide 1s ease forwards;
+}
+
+@keyframes fadeSlide {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.subtitulo {
+  margin: 0 20px 12px;
+  text-align: center;
+  color: #53705c;
+}
+
+.menu {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 20px;
+  max-width: 800px;
+  padding: 20px;
+}
+
+/* Botões */
+.menu button {
+  width: 180px;
+  height: 120px;
+  font-size: 16px;
+  font-weight: bold;
+  color: #2f6b4f;
+  background-color: #ffffff;
+  border: 2px solid #a3d9b1;
+  border-radius: 14px;
+  box-shadow: 0 3px 10px rgba(56, 153, 102, 0.15);
+  transition: all 0.3s ease;
+}
+
+.menu button:hover {
+  background-color: #dbffe8;
+  box-shadow: 0 6px 18px rgba(56, 153, 102, 0.30);
+  transform: translateY(-3px);
+}
+
+  </style>
+</head>
+<body>
+
+  <h1>Sistema de Vendas</h1>
+  <div class="images-container">
+  <img src="./assets/checklist.png" alt="Checklist">
+  <img src="./assets/truck.png" alt="Caminhão">
+  <img src="./assets/water-hose.png" alt="Mangueira">
+</div>
+  <p class="subtitulo">Olá, Wemerson. Escolha o que deseja fazer.</p>
+
+  <div class="menu">
+    <button onclick="window.location.href='cadastroClientes.html'">Cadastro de Clientes</button>
+    <button onclick="window.location.href='cadastrar-produtos.html'">Cadastro de Produtos</button>
+    <button onclick="window.location.href='cadastrarPedidos.html'">Digitar Pedido</button>
+    <button onclick="window.location.href='cadastrarTabela.html'">Tabelas de Preços</button>
+    <button onclick="window.location.href='relatorio.html'">Tirar Relatório</button>
+    <button onclick="window.location.href='historico.html'">Histórico de Pedidos</button>
+    <button onclick="window.location.href='orcamento.html'">Fazer orçamento</button>
+  </div>
+
+</body>
+
+<style>
+.images-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 24px;
+  margin-bottom: 16px;
+}
+
+.images-container img {
+  width: 80px;
+  height: 80px;
+  object-fit: contain;
+}
+</style>
+
+</html>

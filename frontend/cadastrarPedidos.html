@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Cadastro de Pedido</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    
+  body {
+    font-family: Arial, sans-serif;
+    margin: 20px;
+    background-color: #f5f5f5;
+    color: #333;
+  }
+
+  h1, h3 {
+    color: #2e604b;
+  }
+  h1{
+    text-align: center;
+  }
+  input, select, button {
+    padding: 8px;
+    margin: 5px 0;
+    font-size: 14px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+  }
+
+  input:focus, select:focus {
+    outline: none;
+    border-color: #7bbd94;
+    box-shadow: 0 0 4px rgba(123, 189, 148, 0.5);
+  }
+
+  button {
+    background-color: #4caf50;
+    color: white;
+    border: none;
+    cursor: pointer;
+  }
+
+  button:hover {
+    background-color: #3e8e41;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 15px;
+    background-color: white;
+  }
+
+  th {
+    background-color: #d6f0e2;
+    border: 1px solid #ccc;
+    padding: 8px;
+    text-align: left;
+  }
+
+  td {
+    border: 1px solid #ccc;
+    padding: 6px;
+  }
+
+  .subtotal {
+    font-weight: bold;
+    color: #2e604b;
+  }
+
+  #total {
+    color: #2e604b;
+    font-weight: bold;
+    font-size: 18px;
+  }
+
+  @media print {
+    select, input, button {
+      display: none !important;
+    }
+
+    td::after {
+      content: attr(data-print);
+      font-weight: bold;
+    }
+
+    h1, h3 {
+      color: black;
+      
+    }
+
+    body {
+      background: white;
+    }
+  }
+
+    table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+    th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
+    input, select { width: 100%; }
+    button { margin-top: 10px; }
+
+    @media print {
+      select, input, button {
+        display: none !important;
+      }
+      td::after {
+        content: attr(data-print);
+        font-weight: bold;
+      }
+    }
+
+    .voltar {
+  position: absolute;
+  top: 15px;
+  left: 15px;
+  cursor: pointer;
+    color: #2e604b;
+  transition: color 0.2s;
+}
+
+.voltar:hover {
+    color: #47846a;
+  
+}
+
+@media print {
+  .lapis {
+    display: none !important;
+  }
+}
+
+
+.lapis:hover {
+  opacity: 1;
+}
+
+  </style>
+</head>
+<body>
+
+  <!-- 🔙 Ícone de voltar -->
+  <div class="voltar" onclick="window.history.back()" title="Voltar">
+    <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24">
+      <path fill="currentColor" d="m10 18l-6-6l6-6l1.4 1.45L7.85 11H20v2H7.85l3.55 3.55z"/>
+    </svg>
+  </div>
+
+  <h1>Cadastro de Pedido</h1>
+
+  <!-- ✅ FORMULÁRIO DO CLIENTE -->
+  <form id="formPedido">
+    <h3>Dados do Cliente</h3>
+    <input type="text" name="nome_cliente" placeholder="Nome do Cliente" required><br>
+    <input type="text" name="cnpj" placeholder="CNPJ" required><br>
+    <input type="text" name="razao_social" placeholder="Razão Social" required><br>
+    <input type="text" name="cidade" placeholder="Cidade" required><br>
+    <input type="text" name="endereco" placeholder="Endereço" required><br>
+    <input type="text" name="telefone" placeholder="Telefone" required><br><br>
+
+    <label for="tabela">Escolher tabela de preço:</label>
+<select id="tabela">
+  <option value="GO">GO</option>
+  <option value="TO">TO</option>
+</select>
+
+    <h3>Produtos</h3>
+    <table id="tabela-produtos">
+      <thead>
+        <tr>
+          <th>Categoria</th>
+          <th>Produto</th>
+          <th>Quantidade</th>
+          <th>Preço Unitário (R$)</th>
+          <th>Subtotal (R$)</th>
+          <th>Ação</th>
+        </tr>
+      </thead>
+      <tbody id="corpo-tabela">
+        <!-- Linhas vão aqui -->
+      </tbody>
+    </table>
+
+    <button type="button" onclick="adicionarLinha()">+ Adicionar Produto</button>
+
+    <h3>Total: R$ <span id="total">0.00</span></h3>
+
+    <label for="pagamento">Forma de pagamento:</label>
+<select id="pagamento" onchange="atualizarTotal()">
+  <option value="parcelado">Parcelado</option>
+  <option value="avista">À vista (5% de desconto)</option>
+</select>
+
+<h3>Observações</h3>
+<textarea name="observacoes" rows="4" style="width:100%;" placeholder="Escreva observações do pedido aqui..."></textarea>
+
+
+    <button type="submit">Salvar e Gerar PDF</button>
+  </form>
+  <div id="mensagemCadastro" role="status" aria-live="polite"
+       style="margin:18px auto;max-width:720px;text-align:center;"></div>
+
+  <script>
+function adicionarLinha() {
+  const tbody = document.getElementById('corpo-tabela');
+  const linha = document.createElement('tr');
+
+  linha.innerHTML = `
+    <td>
+      <select onchange="carregarProdutos(this, this.parentElement.nextElementSibling.querySelector('select'))">
+        <option value="">Categoria</option>
+        <option value="Mangueiras">Mangueiras</option>
+        <option value="Conexões">Conexões</option>
+        <option value="Tintas">Tintas</option>
+        <option value="Fios">Fios</option>
+      </select>
+    </td>
+  <td>
+  <select onchange="selecionarProduto(this)">
+    <option value="">Produto</option>
+  </select>
+
+  <div class="produto-edicao" style="display:none;align-items:center;gap:6px;margin-top:4px;">
+    <input
+      type="text"
+      class="produto-editavel"
+    />
+    <span class="lapis" onclick="focarEdicao(this)">✏️</span>
+  </div>
+</td>
+
+
+    <td>
+      <input inputmode="decimal" pattern="\\d+(\\.\\d{1,2})?" class="quantidade" value="1" placeholder="Ex: 1.5" onchange="atualizarSubtotal(this)">
+    </td>
+    <td>
+      <input type="text" class="preco" value="0.00" onchange="atualizarSubtotal(this)">
+    </td>
+    <td class="subtotal">0.00</td>
+    <td><button type="button" onclick="removerLinha(this)">🗑️</button></td>
+  `;
+
+  tbody.appendChild(linha);
+  atualizarTotal();
+}
+
+
+  function carregarProdutos(selectCategoria, selectProduto) {
+    const categoria = selectCategoria.value;
+    const tabela = document.getElementById('tabela').value;
+    selectCategoria.parentElement.setAttribute('data-print', categoria);
+
+    fetch(`/produtos/${tabela}/${categoria}`)
+      .then(res => res.json())
+      .then(produtos => {
+        selectProduto.innerHTML = '<option value="">Produto</option>';
+        produtos.forEach(prod => {
+          const option = document.createElement('option');
+          option.value = JSON.stringify(prod);
+          option.textContent = prod.nome;
+          selectProduto.appendChild(option);
+        });
+      });
+  }
+
+  function removerLinha(botao) {
+  const linha = botao.closest('tr');
+  linha.remove();
+  atualizarTotal();
+}
+
+ function selecionarProduto(selectProduto) {
+  if (!selectProduto.value) return;
+
+  try {
+    const produto = JSON.parse(selectProduto.value);
+    const linha = selectProduto.closest('tr');
+
+    // preço
+    const precoInput = linha.querySelector('.preco');
+    precoInput.value = produto.preco_unitario?.toFixed(2) || '0.00';
+
+    // campo editável do nome
+    // área de edição (input + lápis)
+const areaEdicao = linha.querySelector('.produto-edicao');
+const inputNome = linha.querySelector('.produto-editavel');
+
+
+// coloca o nome original
+inputNome.value = produto.nome;
+
+// atualiza o texto para impressão
+const tdProduto = selectProduto.closest('td');
+tdProduto.setAttribute('data-print', inputNome.value);
+
+// se o usuário digitar algo, atualiza também
+inputNome.addEventListener('input', () => {
+  tdProduto.setAttribute('data-print', inputNome.value);
+});
+
+
+
+// mostra área de edição e esconde o select
+areaEdicao.style.display = 'flex';
+selectProduto.style.display = 'none';
+
+
+
+
+// já deixa pronto pra digitar
+inputNome.focus();
+
+
+    atualizarSubtotal(precoInput);
+  } catch (error) {
+    console.error("Erro ao selecionar produto:", error);
+  }
+}
+
+function focarEdicao(lapis) {
+  const input = lapis.previousElementSibling;
+  input.focus();
+}
+
+
+ function atualizarSubtotal(input) {
+  const linha = input.closest('tr');
+  const quantidadeInput = linha.querySelector('.quantidade');
+  const precoInput = linha.querySelector('.preco');
+
+  const quantidadeStr = quantidadeInput.value.replace(',', '.');
+  const precoStr = precoInput.value.replace(',', '.');
+
+  const quantidade = parseFloat(quantidadeStr) || 0;
+  const preco = parseFloat(precoStr) || 0;
+
+  const subtotal = quantidade * preco;
+  linha.querySelector('.subtotal').innerText = subtotal.toFixed(2);
+
+  atualizarTotal();
+}
+
+
+  function atualizarTotal() {
+    let total = 0;
+    document.querySelectorAll('.subtotal').forEach(cell => {
+      total += parseFloat(cell.innerText) || 0;
+    });
+
+    const formaPagamento = document.getElementById('pagamento')?.value;
+    const desconto = formaPagamento === 'avista' ? total * 0.05 : 0;
+    const totalFinal = total - desconto;
+
+    document.getElementById('total').innerText = totalFinal.toFixed(2);
+  }
+
+  document.getElementById('formPedido').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    const form = e.target;
+    const mensagem = document.getElementById('mensagemCadastro');
+    const botao = form.querySelector('button[type="submit"]');
+    botao.disabled = true;
+    mensagem.style.color = '#2e604b';
+    mensagem.textContent = 'Salvando pedido...';
+    let salvo = false;
+
+    try {
+      const linhas = [...document.querySelectorAll('#corpo-tabela tr')];
+      const itens = linhas.map(tr => {
+        const selecao = tr.querySelector('td:nth-child(2) select');
+        if (!selecao?.value) throw new Error('Escolha um produto em cada linha.');
+        const produto = tr.querySelector('.produto-editavel')?.value.trim() ||
+          selecao.selectedOptions[0]?.textContent.trim();
+        const quantidade = Number(tr.querySelector('.quantidade')?.value.replace(',', '.'));
+        const preco_unitario = Number(tr.querySelector('.preco')?.value.replace(',', '.'));
+        if (!produto || !Number.isFinite(quantidade) || quantidade <= 0 ||
+            !Number.isFinite(preco_unitario) || preco_unitario < 0) {
+          throw new Error('Revise os produtos, quantidades e preços antes de salvar.');
+        }
+        return { produto, quantidade, preco_unitario };
+      });
+
+      const cliente = {
+        nome_cliente: form.nome_cliente.value,
+        cnpj: form.cnpj?.value || null,
+        razao_social: form.razao_social?.value || null,
+        cidade: form.cidade.value,
+        endereco: form.endereco.value,
+        telefone: form.telefone.value,
+        observacoes: form.observacoes.value,
+        pagamento: document.getElementById('pagamento').value,
+        itens
+      };
+
+      const resposta = await fetch('/api/pedidos/completo', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(cliente)
+      });
+      const dados = await resposta.json();
+      if (!resposta.ok) throw new Error(dados.error || 'Erro ao salvar.');
+
+      salvo = true;
+      mensagem.replaceChildren();
+      mensagem.append(`Pedido Nº ${dados.id} salvo. `);
+      const link = document.createElement('a');
+      link.href = `/pedido/${dados.id}/pdf`;
+      link.target = '_blank';
+      link.rel = 'noopener noreferrer';
+      link.textContent = 'Abrir PDF';
+      mensagem.append(link, ' · ');
+      const novo = document.createElement('a');
+      novo.href = 'cadastrarPedidos.html';
+      novo.textContent = 'Cadastrar outro';
+      mensagem.append(novo);
+    } catch (error) {
+      mensagem.style.color = '#a12424';
+      mensagem.textContent = error.message || 'Não foi possível salvar.';
+    } finally {
+      botao.disabled = salvo;
+    }
+  });
+
+  window.onload = adicionarLinha;
+</script>
+
+</body>
+</html>

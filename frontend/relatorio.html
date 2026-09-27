@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <title>Relatórios de Pedidos</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 40px;
+      background-color: #f5f5f5;
+      color: #333;
+    }
+
+    h1 {
+      text-align: center;
+      color: #2e604b;
+    }
+
+    form {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      align-items: center;
+      gap: 10px;
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+      max-width: 700px;
+      margin: 0 auto;
+    }
+
+    label {
+      font-weight: bold;
+    }
+
+    select, button {
+      padding: 8px;
+      border-radius: 4px;
+      border: 1px solid #ccc;
+      font-size: 16px;
+    }
+
+    button {
+      background-color: #3e8e41;
+      color: white;
+      border: none;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+
+    button:hover {
+      background-color: #3e8e41;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 30px;
+      background: white;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    th, td {
+      padding: 10px;
+      text-align: left;
+      border-bottom: 1px solid #ddd;
+    }
+
+    th {
+      background-color: #eee;
+    }
+
+    #resultado {
+      max-width: 900px;
+      margin: 20px auto;
+    }
+
+    h2 {
+      text-align: center;
+      margin-top: 30px;
+      color: #3e8e41;
+    }
+
+    .voltar {
+  position: absolute;
+  top: 15px;
+  left: 15px;
+  cursor: pointer;
+  color: #2e604b;
+  transition: color 0.2s;
+}
+
+.voltar:hover {
+  color: #47846a;
+}
+  </style>
+</head>
+<body>
+   <!-- 🔙 Ícone de voltar -->
+  <div class="voltar" onclick="window.history.back()" title="Voltar">
+    <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24">
+      <path fill="currentColor" d="m10 18l-6-6l6-6l1.4 1.45L7.85 11H20v2H7.85l3.55 3.55z"/>
+    </svg>
+  </div>
+  <h1>Relatório de Pedidos</h1>
+  <form id="formRelatorio">
+    <label for="ano">Ano:</label>
+    <select id="ano" name="ano" required>
+      <script>
+        const anoAtual = new Date().getFullYear();
+        for (let ano = 2022; ano <= anoAtual; ano++) {
+          document.write(`<option value="${ano}">${ano}</option>`);
+        }
+      </script>
+    </select>
+
+    <label for="mes">Mês:</label>
+    <select id="mes" name="mes">
+      <option value="">-- Todos os Meses --</option>
+      <option value="01">Janeiro</option>
+      <option value="02">Fevereiro</option>
+      <option value="03">Março</option>
+      <option value="04">Abril</option>
+      <option value="05">Maio</option>
+      <option value="06">Junho</option>
+      <option value="07">Julho</option>
+      <option value="08">Agosto</option>
+      <option value="09">Setembro</option>
+      <option value="10">Outubro</option>
+      <option value="11">Novembro</option>
+      <option value="12">Dezembro</option>
+    </select>
+
+    <button type="submit">Gerar Relatório</button>
+  </form>
+
+  <p style="text-align:center;"><a href="historico.html">Consultar e cancelar pedidos do histórico</a></p>
+  <div id="resultado" role="status" aria-live="polite"></div>
+
+  <script>
+    document.getElementById('ano').value = String(new Date().getFullYear());
+    const resultado = document.getElementById('resultado');
+    const moeda = valor => Number(valor || 0).toLocaleString('pt-BR', {
+      style: 'currency', currency: 'BRL'
+    });
+    const dataBR = valor => {
+      const dia = String(valor || '').slice(0, 10).split('-');
+      return dia.length === 3 ? dia.reverse().join('/') : valor || '';
+    };
+    const celula = (linha, conteudo) => {
+      const td = document.createElement('td');
+      td.textContent = conteudo ?? '';
+      linha.append(td);
+    };
+
+    document.getElementById('formRelatorio').addEventListener('submit', async e => {
+      e.preventDefault();
+      const ano = document.getElementById('ano').value;
+      const mes = document.getElementById('mes').value;
+      const url = mes ? `/relatorio/pedidos/${ano}/${mes}` : `/relatorio/pedidos/ano/${ano}`;
+      const pdfUrl = mes
+        ? `/relatorio/pedidos/${ano}/${mes}/pdf`
+        : `/relatorio/pedidos/ano/${ano}/pdf`;
+      resultado.textContent = 'Carregando pedidos...';
+
+      try {
+        const resposta = await fetch(url);
+        if (!resposta.ok) throw new Error('Não foi possível carregar o relatório.');
+        const pedidos = await resposta.json();
+        resultado.replaceChildren();
+        if (pedidos.length === 0) {
+          resultado.textContent = 'Nenhum pedido ativo encontrado nesse período.';
+          return;
+        }
+
+        const titulo = document.createElement('h2');
+        titulo.textContent = mes ? `Pedidos de ${mes}/${ano}` : `Pedidos de ${ano}`;
+        const resumo = document.createElement('p');
+        const soma = pedidos.reduce((total, pedido) => total + Number(pedido.total || 0), 0);
+        resumo.textContent = `${pedidos.length} pedido(s) · Total: ${moeda(soma)}`;
+        const tabela = document.createElement('table');
+        const cabecalho = document.createElement('thead');
+        const linhaTitulo = document.createElement('tr');
+        ['Nº', 'Data', 'Cliente', 'Razão Social', 'Cidade', 'Total'].forEach(texto => {
+          const th = document.createElement('th');
+          th.textContent = texto;
+          linhaTitulo.append(th);
+        });
+        cabecalho.append(linhaTitulo);
+        const corpo = document.createElement('tbody');
+        pedidos.forEach(pedido => {
+          const linha = document.createElement('tr');
+          [pedido.id, dataBR(pedido.data), pedido.nome_cliente,
+            pedido.razao_social, pedido.cidade, moeda(pedido.total)]
+            .forEach(valor => celula(linha, valor));
+          corpo.append(linha);
+        });
+        tabela.append(cabecalho, corpo);
+
+        const link = document.createElement('a');
+        link.href = pdfUrl;
+        link.target = '_blank';
+        link.rel = 'noopener noreferrer';
+        link.textContent = 'Baixar PDF do relatório';
+        resultado.append(titulo, resumo, tabela, link);
+      } catch (error) {
+        resultado.textContent = error.message;
+      }
+    });
+  </script>
+</body>
+</html>

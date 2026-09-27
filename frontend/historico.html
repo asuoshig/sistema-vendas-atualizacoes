@@ -1,0 +1,188 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Histórico de pedidos — Sistema de Vendas</title>
+  <style>
+    :root { font-family: Arial, sans-serif; color: #26372d; background: #f5f8f6; }
+    body { margin: 0; }
+    header { background: #285e42; color: white; padding: 24px max(24px, calc((100vw - 1100px) / 2)); }
+    header a { color: #e9ffef; text-decoration: none; }
+    h1 { margin: 14px 0 6px; font-size: 28px; }
+    header p { margin: 0; color: #d8eedf; line-height: 1.4; }
+    main { max-width: 1100px; margin: 28px auto; padding: 0 20px; }
+    .card { background: white; border: 1px solid #dce8df; border-radius: 12px; padding: 20px;
+      box-shadow: 0 3px 12px #244b3312; }
+    .controles { display: flex; flex-wrap: wrap; align-items: end; gap: 14px; }
+    label { display: flex; flex-direction: column; gap: 6px; font-weight: 600; }
+    input, select { font: inherit; padding: 10px; border: 1px solid #bfcfc3; border-radius: 7px;
+      min-height: 42px; box-sizing: border-box; }
+    input { min-width: 245px; }
+    #resumo { margin: 18px 0 0; color: #516357; }
+    #mensagem { min-height: 22px; margin: 16px 0; }
+    .tabela { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; background: white; }
+    th, td { text-align: left; padding: 12px 10px; border-bottom: 1px solid #e7eee9; }
+    th { background: #eff5f0; color: #355342; font-size: 14px; }
+    td { font-size: 14px; }
+    .situacao { display: inline-block; padding: 5px 9px; border-radius: 30px;
+      background: #e2f3e7; color: #245c35; }
+    .situacao.cancelado { background: #f5e9e7; color: #8b3c31; }
+    button, .pdf { font: inherit; cursor: pointer; border-radius: 7px; padding: 8px 10px; }
+    button { border: 1px solid #c7d9cc; background: white; color: #275f42; }
+    button:hover { background: #eaf5ed; }
+    button:disabled { opacity: .55; cursor: wait; }
+    .pdf { color: #225e3b; display: inline-block; margin-right: 6px; }
+    .acoes { white-space: nowrap; }
+    @media (max-width: 650px) { h1 { font-size: 24px; } .card { padding: 14px; } }
+  </style>
+</head>
+<body>
+  <header>
+    <a href="home.html">← Voltar ao início</a>
+    <h1>Histórico de pedidos</h1>
+    <p>Pedidos cancelados ficam guardados para consulta e não entram nos relatórios.</p>
+  </header>
+  <main>
+    <div class="card">
+      <div class="controles">
+        <label>Buscar pedido ou cliente
+          <input id="busca" type="search" placeholder="Nº, nome ou cidade">
+        </label>
+        <label>Situação
+          <select id="filtro">
+            <option value="ativos">Ativos</option>
+            <option value="cancelados">Cancelados</option>
+            <option value="todos">Todos</option>
+          </select>
+        </label>
+      </div>
+      <p id="resumo"></p>
+    </div>
+    <p id="mensagem" role="status" aria-live="polite"></p>
+    <div class="card tabela">
+      <table>
+        <thead>
+          <tr>
+            <th>Nº</th><th>Data</th><th>Cliente</th><th>Cidade</th>
+            <th>Total</th><th>Situação</th><th>Ações</th>
+          </tr>
+        </thead>
+        <tbody id="pedidos"></tbody>
+      </table>
+    </div>
+  </main>
+  <script>
+    let lista = [];
+    const corpo = document.getElementById('pedidos');
+    const mensagem = document.getElementById('mensagem');
+    const moeda = valor => Number(valor || 0).toLocaleString('pt-BR', {
+      style: 'currency', currency: 'BRL'
+    });
+    const dataBR = valor => {
+      const partes = String(valor || '').slice(0, 10).split('-');
+      return partes.length === 3 ? partes.reverse().join('/') : '';
+    };
+    const celula = (linha, texto) => {
+      const td = document.createElement('td');
+      td.textContent = texto ?? '';
+      linha.append(td);
+      return td;
+    };
+
+    function desenhar() {
+      const filtro = document.getElementById('filtro').value;
+      const busca = document.getElementById('busca').value.trim().toLocaleLowerCase('pt-BR');
+      const visiveis = lista.filter(p => {
+        if (filtro === 'ativos' && p.cancelado_em) return false;
+        if (filtro === 'cancelados' && !p.cancelado_em) return false;
+        return [p.id, p.nome_cliente, p.razao_social, p.cidade]
+          .some(valor => String(valor ?? '').toLocaleLowerCase('pt-BR').includes(busca));
+      });
+      corpo.replaceChildren();
+      const ativos = lista.filter(p => !p.cancelado_em);
+      const total = ativos.reduce((soma, p) => soma + Number(p.total || 0), 0);
+      document.getElementById('resumo').textContent =
+        `${ativos.length} pedido(s) ativo(s) · Total ativo: ${moeda(total)}`;
+
+      if (!visiveis.length) {
+        const linha = document.createElement('tr');
+        const td = celula(linha, 'Nenhum pedido encontrado.');
+        td.colSpan = 7;
+        corpo.append(linha);
+        return;
+      }
+
+      visiveis.forEach(p => {
+        const linha = document.createElement('tr');
+        [p.id, dataBR(p.data), p.nome_cliente, p.cidade, moeda(p.total)]
+          .forEach(valor => celula(linha, valor));
+        const situacao = celula(linha, '');
+        const selo = document.createElement('span');
+        selo.className = p.cancelado_em ? 'situacao cancelado' : 'situacao';
+        selo.textContent = p.cancelado_em ? 'Cancelado' : 'Ativo';
+        situacao.append(selo);
+
+        const acoes = celula(linha, '');
+        acoes.className = 'acoes';
+        const detalhes = document.createElement('a');
+        detalhes.href = `visualizar-pedido.html?id=${p.id}`;
+        detalhes.className = 'pdf';
+        detalhes.textContent = 'Detalhes';
+        acoes.append(detalhes);
+        if (!p.cancelado_em) {
+          const pdf = document.createElement('a');
+          pdf.href = `/pedido/${p.id}/pdf`;
+          pdf.target = '_blank';
+          pdf.rel = 'noopener noreferrer';
+          pdf.className = 'pdf';
+          pdf.textContent = 'PDF';
+          acoes.append(pdf);
+        }
+        const botao = document.createElement('button');
+        botao.type = 'button';
+        botao.dataset.id = p.id;
+        botao.dataset.acao = p.cancelado_em ? 'restaurar' : 'cancelar';
+        botao.textContent = p.cancelado_em ? 'Restaurar' : 'Cancelar';
+        acoes.append(botao);
+        corpo.append(linha);
+      });
+    }
+
+    async function carregar() {
+      const resposta = await fetch('/api/pedidos?incluirCancelados=1');
+      if (!resposta.ok) throw new Error('Não foi possível carregar o histórico.');
+      lista = await resposta.json();
+      desenhar();
+    }
+    document.getElementById('busca').addEventListener('input', desenhar);
+    document.getElementById('filtro').addEventListener('change', desenhar);
+    corpo.addEventListener('click', async event => {
+      const botao = event.target.closest('button[data-acao]');
+      if (!botao) return;
+      const { id, acao } = botao.dataset;
+      const aviso = acao === 'cancelar'
+        ? `Cancelar o pedido nº ${id}? Ele sairá dos relatórios e poderá ser restaurado.`
+        : `Restaurar o pedido nº ${id}? Ele voltará aos relatórios.`;
+      if (!confirm(aviso)) return;
+      botao.disabled = true;
+      try {
+        const resposta = await fetch(`/api/pedidos/${id}/${acao}`, { method: 'PATCH' });
+        if (!resposta.ok) {
+          const dados = await resposta.json();
+          throw new Error(dados.error || 'Não foi possível atualizar o pedido.');
+        }
+        await carregar();
+        mensagem.style.color = '#275f42';
+        mensagem.textContent = `Pedido nº ${id} ${acao === 'cancelar' ? 'cancelado' : 'restaurado'}.`;
+      } catch (error) {
+        mensagem.style.color = '#a12424';
+        mensagem.textContent = error.message;
+        botao.disabled = false;
+      }
+    });
+    carregar().catch(error => { mensagem.textContent = error.message; });
+  </script>
+</body>
+</html>

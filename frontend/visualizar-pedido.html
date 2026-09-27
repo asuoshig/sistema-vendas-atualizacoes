@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <title>Visualizar Pedido</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 30px; }
+    h1 { margin-bottom: 0; }
+    p { margin: 4px 0; }
+    table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+    th, td { border: 1px solid #000; padding: 6px; text-align: left; font-size: 12px; }
+    th { background-color: #f0f0f0; }
+    .total { text-align: right; font-weight: bold; }
+    #btnImprimir {
+      margin-top: 20px;
+      padding: 10px 20px;
+      font-size: 14px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <h1>Mangueiras e Tintas Aliança</h1>
+
+  <div id="infoPedido">
+    <p><strong>Pedido Nº:</strong> <span id="pedidoId"></span></p>
+    <p><strong>Data:</strong> <span id="pedidoData"></span></p>
+    <p><strong>Cliente:</strong> <span id="clienteNome"></span></p>
+    <p><strong>Endereço:</strong> <span id="clienteEndereco"></span></p>
+  </div>
+
+  <table>
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Produto</th>
+        <th>Qtd</th>
+        <th>Unitário</th>
+        <th>Subtotal</th>
+      </tr>
+    </thead>
+    <tbody id="itensTabela">
+      <!-- Itens serão inseridos aqui -->
+    </tbody>
+    <tfoot>
+      <tr>
+        <td colspan="4" class="total">Total:</td>
+        <td id="pedidoTotal"></td>
+      </tr>
+    </tfoot>
+  </table>
+
+  
+
+  <button id="btnImprimir" onclick="window.print()">Imprimir Pedido</button>
+  <a id="pdfPedido" target="_blank" rel="noopener noreferrer">Abrir PDF</a>
+  <a href="historico.html">Voltar ao histórico</a>
+
+
+  <script>
+    // Função para ler query param id
+    function getPedidoId() {
+      const params = new URLSearchParams(window.location.search);
+      return params.get('id');
+    }
+
+    async function carregarPedido() {
+      const id = getPedidoId();
+      if (!id) {
+        alert('ID do pedido não fornecido!');
+        return;
+      }
+
+      try {
+        // Busca os dados do pedido
+        const resPedido = await fetch(`/api/pedido/${id}`);
+        if (!resPedido.ok) throw new Error('Pedido não encontrado');
+        const pedido = await resPedido.json();
+
+        // Busca os itens do pedido
+        const resItens = await fetch(`/api/pedido/${id}/itens`);
+        if (!resItens.ok) throw new Error('Itens não encontrados');
+        const itens = await resItens.json();
+
+        // Preenche os dados do pedido
+        document.getElementById('pedidoId').textContent = pedido.id;
+        document.getElementById('pedidoData').textContent = new Date(pedido.data).toLocaleDateString();
+        document.getElementById('clienteNome').textContent = pedido.nome_cliente;
+        document.getElementById('clienteEndereco').textContent = pedido.endereco;
+        document.getElementById('pdfPedido').href = `/pedido/${id}/pdf`;
+
+        // Preenche tabela dos itens
+        const tbody = document.getElementById('itensTabela');
+        tbody.innerHTML = '';
+        itens.forEach((item, i) => {
+          const tr = document.createElement('tr');
+          [i + 1, item.produto, item.quantidade,
+            `R$ ${Number(item.preco_unitario).toFixed(2)}`,
+            `R$ ${Number(item.subtotal).toFixed(2)}`].forEach(valor => {
+            const td = document.createElement('td');
+            td.textContent = valor;
+            tr.append(td);
+          });
+          tbody.appendChild(tr);
+        });
+
+        // Total
+document.getElementById('pedidoTotal').textContent = `R$ ${Number(pedido.total).toFixed(2)}`;
+
+} catch (error) {
+  alert('Erro ao carregar pedido: ' + error.message);
+}
+
+}
+
+// Executa ao carregar a página
+window.onload = carregarPedido;
+</script>
+</body>
+</html>

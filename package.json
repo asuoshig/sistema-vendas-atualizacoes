@@ -1,0 +1,45 @@
+{
+  "name": "sistema-vendas",
+  "version": "1.1.1",
+  "description": "Sistema de Vendas Desktop com Electron e SQLite",
+  "license": "ISC",
+  "main": "main.js",
+  "scripts": {
+    "start": "node backend/server.js",
+    "electron": "electron .",
+    "build": "electron-builder --win nsis --publish never",
+    "build:release": "electron-builder --win nsis --publish never --config electron-builder.release.config.cjs"
+  },
+  "build": {
+    "appId": "com.seuempresa.sistemavendas",
+    "productName": "SistemaVendas",
+    "forceCodeSigning": false,
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "main.js",
+      "backend/**/*",
+      "frontend/**/*",
+      "package.json"
+    ],
+    "win": {
+      "target": "nsis"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true
+    }
+  },
+  "dependencies": {
+    "electron-updater": "^6.6.7",
+    "express": "^5.1.0",
+    "sqlite3": "6.0.1"
+  },
+  "devDependencies": {
+    "electron": "^37.2.3",
+    "electron-builder": "^26.0.12",
+    "puppeteer": "^24.15.0"
+  }
+}

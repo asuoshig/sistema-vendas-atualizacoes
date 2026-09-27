@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Cadastro Inicial de Produtos</title>
+  <style>
+    .voltar {
+      position: absolute;
+      top: 15px;
+      left: 15px;
+      cursor: pointer;
+      color: #2e604b;
+      transition: color 0.2s;
+    }
+
+    .voltar:hover {
+      color: #47846a;
+    }
+
+    h1 {
+      text-align: center;
+      margin-top: 60px;
+      font-family: Arial, sans-serif;
+    }
+
+    body {
+      font-family: Arial, sans-serif;
+    }
+
+    button {
+      display: block;
+      margin: 20px auto;
+      padding: 10px 20px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- 🔙 Ícone de voltar -->
+  <div class="voltar" onclick="window.history.back()" title="Voltar">
+    <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24">
+      <path fill="currentColor" d="m10 18l-6-6l6-6l1.4 1.45L7.85 11H20v2H7.85l3.55 3.55z"/>
+    </svg>
+  </div>
+
+  <h1>Cadastrar Produtos Iniciais</h1>
+  <button onclick="cadastrarProdutos()">Cadastrar Produtos</button>
+
+  <script>
+    function cadastrarProdutos() {
+      const produtos = [
+        { nome: "Mangueira 1/2", categoria: "Mangueiras", preco_unitario: 10.00 },
+        { nome: "Mangueira 1/4", categoria: "Mangueiras", preco_unitario: 12.50 },
+        { nome: "Mangueira 3/8", categoria: "Mangueiras", preco_unitario: 14.00 },
+        { nome: "Mangueira 3/4", categoria: "Mangueiras", preco_unitario: 15.50 },
+        { nome: "Mangueira 1", categoria: "Mangueiras", preco_unitario: 20.00 },
+        { nome: "Conexão 90° PVC", categoria: "Conexões", preco_unitario: 1.50 },
+        { nome: "Conexão 45° PVC", categoria: "Conexões", preco_unitario: 1.80 },
+        { nome: "Curva 90° PVC", categoria: "Conexões", preco_unitario: 2.00 },
+        { nome: "Curva 90° PVC", categoria: "Conexões", preco_unitario: 2.30 },
+        { nome: "Joelho 45° PVC", categoria: "Conexões", preco_unitario: 2.50 },
+        { nome: "Tinta Acrílica Branca 18L", categoria: "Tintas", preco_unitario: 145.00 },
+        { nome: "Tinta Azul 3.6L", categoria: "Tintas", preco_unitario: 45.00 },
+        { nome: "Fio 1/2", categoria: "Fios", preco_unitario: 1.00 },
+        { nome: "Fio 3/4", categoria: "Fios", preco_unitario: 1.50 },
+        { nome: "Fio 1", categoria: "Fios", preco_unitario: 2.00 },
+        { nome: "Fio 1,5", categoria: "Fios", preco_unitario: 2.50 },
+        { nome: "Fio 2", categoria: "Fios", preco_unitario: 3.00 }
+      ];
+
+      fetch('/produtos', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(produtos)
+      }).then(res => {
+        if (res.ok) {
+          alert("Produtos cadastrados com sucesso!");
+        } else {
+          alert("Erro ao cadastrar produtos.");
+        }
+      }).catch(err => {
+        alert("Erro ao conectar com o servidor.");
+        console.error(err);
+      });
+    }
+  </script>
+</body>
+</html>

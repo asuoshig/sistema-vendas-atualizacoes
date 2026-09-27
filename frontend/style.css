@@ -1,0 +1,4 @@
+* { box-sizing: border-box; }
+a { color: #2e604b; }
+a:hover { color: #1d4931; }
+:focus-visible { outline: 3px solid #6eaf80; outline-offset: 2px; }

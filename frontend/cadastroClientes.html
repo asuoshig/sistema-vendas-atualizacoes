@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <title>Cadastro de Clientes</title>
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      margin: 40px auto;
+      max-width: 800px;
+      background-color: #f7f7f7;
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+
+    h1, h2 {
+      text-align: center;
+      color: #333;
+    }
+
+    form {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      background: #fff;
+      padding: 20px;
+      border-radius: 10px;
+    }
+
+    input[type="text"] {
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      font-size: 1rem;
+    }
+
+    button {
+      padding: 10px 16px;
+      border: none;
+      border-radius: 6px;
+      font-size: 1rem;
+      cursor: pointer;
+      background-color: #4CAF50;
+      color: white;
+      transition: background 0.3s ease;
+    }
+
+    button:hover {
+      background-color: #45a049;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 30px;
+      background: #fff;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    th, td {
+      padding: 12px;
+      text-align: left;
+      border-bottom: 1px solid #ddd;
+    }
+
+    th {
+      background-color: #f0f0f0;
+      color: #333;
+    }
+
+    td button {
+      padding: 6px 10px;
+      font-size: 0.9rem;
+      margin: 0 2px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: background 0.3s ease;
+    }
+
+    td button:hover {
+      opacity: 0.9;
+    }
+
+    td button:nth-child(1) {
+      background-color: #2196F3;
+      color: white;
+    }
+
+    td button:nth-child(2) {
+      background-color: #f44336;
+      color: white;
+    }
+
+    .voltar {
+  position: absolute;
+  top: 15px;
+  left: 15px;
+  cursor: pointer;
+  color: #2e604b;
+  transition: color 0.2s;
+}
+
+.voltar:hover {
+  color: #47846a;
+}
+
+  </style>
+</head>
+<body>
+   <!-- 🔙 Ícone de voltar -->
+  <div class="voltar" onclick="window.history.back()" title="Voltar">
+    <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24">
+      <path fill="currentColor" d="m10 18l-6-6l6-6l1.4 1.45L7.85 11H20v2H7.85l3.55 3.55z"/>
+    </svg>
+  </div>
+  <h1>Cadastro de Clientes</h1>
+
+  <form id="clienteForm">
+    <input type="hidden" name="id" />
+    <input type="text" placeholder="CNPJ" name="cnpj" required />
+    <input type="text" placeholder="Razão Social" name="razao_social" required />
+    <input type="text" placeholder="Cidade" name="cidade" required />
+    <input type="text" placeholder="Nome do Cliente" name="nome" required />
+    <button type="submit">Salvar</button>
+  </form>
+
+  <h2>Clientes Cadastrados</h2>
+  <table id="tabelaClientes">
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>CNPJ</th>
+        <th>Razão Social</th>
+        <th>Cidade</th>
+        <th>Nome</th>
+        <th>Ações</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <script>
+    async function carregarClientes() {
+      const res = await fetch('/clientes');
+      const clientes = await res.json();
+      const tbody = document.querySelector('#tabelaClientes tbody');
+      tbody.innerHTML = '';
+      clientes.forEach(cli => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${cli.id}</td>
+          <td>${cli.cnpj}</td>
+          <td>${cli.razao_social}</td>
+          <td>${cli.cidade}</td>
+          <td>${cli.nome}</td>
+          <td>
+            <button onclick="editarCliente(${cli.id}, '${cli.cnpj}', '${cli.razao_social}', '${cli.cidade}', '${cli.nome}')">Editar</button>
+            <button onclick="excluirCliente(${cli.id})">Excluir</button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function editarCliente(id, cnpj, razao, cidade, nome) {
+      const form = document.getElementById('clienteForm');
+      form.id.value = id;
+      form.cnpj.value = cnpj;
+      form.razao_social.value = razao;
+      form.cidade.value = cidade;
+      form.nome.value = nome;
+    }
+
+    async function excluirCliente(id) {
+      if (!confirm('Tem certeza que deseja excluir este cliente?')) return;
+
+      const res = await fetch(`/clientes/${id}`, { method: 'DELETE' });
+      if (res.ok) {
+        alert('Cliente excluído com sucesso!');
+        carregarClientes();
+      } else {
+        alert('Erro ao excluir cliente.');
+      }
+    }
+
+    document.getElementById('clienteForm').addEventListener('submit', async function(e) {
+      e.preventDefault();
+
+      const form = e.target;
+      const cliente = {
+        cnpj: form.cnpj.value.trim(),
+        razao_social: form.razao_social.value.trim(),
+        cidade: form.cidade.value.trim(),
+        nome: form.nome.value.trim()
+      };
+
+      const id = form.id.value;
+      let url = '/clientes';
+      let method = 'POST';
+
+      if (id) {
+        url = `/clientes/${id}`;
+        method = 'PUT';
+      }
+
+      const res = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(cliente)
+      });
+
+      if (res.ok) {
+        alert(`Cliente ${id ? 'atualizado' : 'cadastrado'} com sucesso!`);
+        form.reset();
+        carregarClientes();
+      } else {
+        const err = await res.json();
+        alert('Erro: ' + (err.error || 'Erro desconhecido'));
+      }
+    });
+
+    window.onload = carregarClientes;
+  </script>
+</body>
+</html>
